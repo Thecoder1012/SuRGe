@@ -1,0 +1,8 @@
+torch
+torchvision
+random
+argparse
+PIL
+albumentations
+numpy
+
