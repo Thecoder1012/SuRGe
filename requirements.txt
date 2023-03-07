@@ -1,8 +1,8 @@
-torch
-torchvision
-random
-argparse
-PIL
-albumentations
-numpy
+torch == 1.10.1+cu113
+torchvision == 0.11.2+cu113
+random == 3.2
+argparse == 1.1
+PIL == 9.2.0
+albumentations == 1.3.0
+numpy == 1.19.5
 
