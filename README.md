@@ -1,4 +1,4 @@
-# SuRGe
+# SuRGe: Fortifying Generative Adversarial Networks for Image Super-Resolution</b>
 Code Implementation for <b>SuRGe: Fortifying Generative Adversarial Networks for Image Super-Resolution</b>
   
 ```
