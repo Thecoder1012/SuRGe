@@ -16,7 +16,7 @@ python3 test.py
 Input <b> Demo </b> Folder 
 Output <b> Test_Results </b> Folder
 
-<b> Generator </b>
+<h3><b> Generator </b></h3>
 ![Generator](https://github.com/Thecoder1012/SuRGe/blob/main/assets/generator_main.jpg)
-<b> Discriminator </b>
+<h3><b> Discriminator </b></h3>
 ![Discriminator](https://github.com/Thecoder1012/SuRGe/blob/main/assets/discriminator_main.jpg)
