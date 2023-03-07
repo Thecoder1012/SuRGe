@@ -20,3 +20,9 @@ Output <b> Test_Results </b> Folder
 ![Generator](https://github.com/Thecoder1012/SuRGe/blob/main/assets/generator_main.jpg)
 <b> Discriminator </b>
 ![Discriminator](https://github.com/Thecoder1012/SuRGe/blob/main/assets/discriminator_main.jpg)
+
+<b> Super Resolution Results </b>
+![Results](https://github.com/Thecoder1012/SuRGe/blob/main/assets/image_SR.png)
+
+<b> Visual Comparison </b>
+![Results](https://github.com/Thecoder1012/SuRGe/blob/main/assets/Qualitative.jpg)
