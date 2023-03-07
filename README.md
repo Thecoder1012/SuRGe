@@ -26,3 +26,11 @@ Output <b> Test_Results </b> Folder
 
 <b> Visual Comparison </b>
 ![Results](https://github.com/Thecoder1012/SuRGe/blob/main/assets/Qualitative.jpg)
+
+Go to the folder <b>Trainer</b> to train SuRGe. 
+
+Please provide the dataset path in <i>train.py</i>
+
+```
+python3 train.py
+```
