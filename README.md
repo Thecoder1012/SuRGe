@@ -18,3 +18,5 @@ Output <b> Test_Results </b> Folder
 
 <b> Generator </b>
 ![Generator](https://github.com/Thecoder1012/SuRGe/blob/main/assets/generator_main.jpg)
+<b> Discriminator </b>
+![Discriminator](https://github.com/Thecoder1012/SuRGe/blob/main/assets/discriminator_main.jpg)
