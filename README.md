@@ -1,11 +1,17 @@
 # SuRGe: Fortifying Generative Adversarial Networks for Image Super-Resolution</b>
-Code Implementation for <b>SuRGe: Fortifying Generative Adversarial Networks for Image Super-Resolution</b>
-  
+
+<h3> PyTorch Implementation for <b>SuRGe: Super Resolution Generator</b> </h3>
+
 ```
 pip install -r requirements.txt
 ```
+Download the pretrained model from [Google Drive](https://drive.google.com/file/d/1bIDRUq3K6sqM3PUA76sd9CrweAGYm3kf/view?usp=sharing) and Put it in the <b>Pretrained_Model</b> Folder.
 
+Run this code to check the images in Demo Folder
 
 ```
 python3 test.py
 ```
+
+Input <b> Demo </b> Folder 
+Output <b> Test_Results </b> Folder
