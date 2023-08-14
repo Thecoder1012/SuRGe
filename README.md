@@ -17,7 +17,7 @@ Input <b> Demo </b> Folder
 Output <b> Test_Results </b> Folder
 
 <b> Generator </b>
-![Generator](https://github.com/Thecoder1012/SuRGe/blob/main/assets/generator_main.jpg)
+![Generator](https://github.com/Thecoder1012/SuRGe/blob/main/assets/generator_updated.png)
 <b> Discriminator </b>
 ![Discriminator](https://github.com/Thecoder1012/SuRGe/blob/main/assets/discriminator_main.jpg)
 
