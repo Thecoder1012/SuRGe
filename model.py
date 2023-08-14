@@ -1,23 +1,7 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
 
-'''
-Pixel Normalization
-'''
-class PixelNorm(nn.Module):
-    def __init__(self):
-        super(PixelNorm, self).__init__()
-        self.epsilon = 1e-8
-
-    def forward(self, x):
-        return x / torch.sqrt(torch.mean(x ** 2, dim=1, keepdim=True) + self.epsilon)
-
-'''
-Implementation of Convblock
--------------------------------------------
-Conv + BatchNorm (True/False) + PReLU (True/False) --> Generator
-Conv + PixelNorm + LReLU (True/False) - > Discriminator
-'''
 class ConvBlock(nn.Module):
     def __init__(
         self,
@@ -26,14 +10,12 @@ class ConvBlock(nn.Module):
         discriminator=False,
         use_act=True,
         use_bn=True,
-        use_pn = False,
         **kwargs,
     ):
         super().__init__()
         self.use_act = use_act
         self.cnn = nn.Conv2d(in_channels, out_channels, **kwargs, bias=not use_bn)
         self.bn = nn.BatchNorm2d(out_channels) if use_bn else nn.Identity()
-        self.pn = PixelNorm() if use_pn else nn.Identity()
         self.act = (
             nn.LeakyReLU(0.2, inplace=True)
             if discriminator
@@ -43,33 +25,18 @@ class ConvBlock(nn.Module):
     def forward(self, x):
         return self.act(self.bn(self.cnn(x))) if self.use_act else self.bn(self.cnn(x))
 
-'''
-Upsampleblock (U0,U1)
------------------
-Conv + NN + PReLU
-'''
 
 class UpsampleBlock(nn.Module):
     def __init__(self, in_c, scale_factor):
         super().__init__()
         self.conv = nn.Conv2d(in_c, in_c, 3, 1, 1)
         #self.ps = nn.PixelShuffle(scale_factor)  # in_c * 4, H, W --> in_c, H*2, W*2
-        self.ub = nn.Upsample(scale_factor = scale_factor, mode='nearest')
+        self.ps = nn.Upsample(scale_factor = scale_factor, mode='nearest')
         self.act = nn.PReLU(num_parameters=in_c)
 
     def forward(self, x):
-        return self.act(self.ub(self.conv(x)))
+        return self.act(self.ps(self.conv(x)))
 
-'''
-Residual-Block (R0, R1)
-	-> ConvBlock (conv + bn + activation) [Sub-Block 1]
-	-> ConvBlock (conv + bn) [Sub-Block 2]
-	Sub-Block 1 + Sub-Block 2
-	
-We use Ng residual blocks in each stage of Generator
-and
-Nd residual blocks in Discriminator
-'''
 
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels):
@@ -95,59 +62,77 @@ class ResidualBlock(nn.Module):
         out = self.block2(out)
         return out + x
 
-'''
-Implementation of Generator
-'''
+
 class Generator(nn.Module):
-    def __init__(self, alpha=0.4, beta = 0.1, in_channels=3, num_channels=64, num_blocks=8):
+    def __init__(self, in_channels=3, num_channels=64, num_blocks=8):
         super().__init__()
-        self.alpha = alpha
-        self.beta = beta
+        # self.alpha = nn.Parameter(torch.tensor(0.5))
+        # self.beta = nn.Parameter(torch.tensor(0.5))
+        self.hyp = nn.Parameter(torch.tensor([0.33, 0.33, 0.34]))
+        self.hyp_p = nn.Parameter(torch.tensor([0.5, 0.5]))
         self.initial = ConvBlock(in_channels, num_channels, kernel_size=9, stride=1, padding=4, use_bn=False)
-        self.initial_cont = ConvBlock(num_channels, num_channels*2, kernel_size=9, stride=1, padding=4, use_bn=False)
+        self.initial_cont = ConvBlock(64, 128, kernel_size=9, stride=1, padding=4, use_bn=False)
         
         self.residuals = nn.Sequential(*[ResidualBlock(num_channels) for _ in range(num_blocks)])
-        self.residuals_cont = nn.Sequential(*[ResidualBlock(num_channels*2) for _ in range(num_blocks)])
+        self.residuals_cont = nn.Sequential(*[ResidualBlock(128) for _ in range(num_blocks)])
         
         self.convblock = ConvBlock(num_channels, num_channels, kernel_size=3, stride=1, padding=1, use_act=False)
-        self.convblock_cont = ConvBlock(num_channels*2, num_channels*2, kernel_size=3, stride=1, padding=1, use_act=False) 
+        self.convblock_cont = ConvBlock(128, 128, kernel_size=3, stride=1, padding=1, use_act=False) 
         self.upsamples = nn.Sequential(UpsampleBlock(num_channels, 2))
-        self.upsamples_cont = nn.Sequential(UpsampleBlock(num_channels*2, 2))
+        self.upsamples_cont = nn.Sequential(UpsampleBlock(128, 2))
+        
         self.final = nn.Conv2d(num_channels, in_channels, kernel_size=9, stride=1, padding=4)
-        self.final_cont = nn.Conv2d(num_channels*2, in_channels, kernel_size=9, stride=1, padding=4)
+        self.final_cont = nn.Conv2d(128, in_channels, kernel_size=9, stride=1, padding=4)
 
     def forward(self, x):
-        initial = self.initial(x) 			# Low Level Features C0
-        x = self.residuals(initial) 			# High level Features R0
-        x = self.convblock(x) + initial 		# F0 = I0 + C0
-        x = self.upsamples(x) 				# Upsampling Block - U0
-        initial_cont = self.initial_cont(x) 		# C1
-        element_init = self.upsamples(initial) 	# U0 - - > C0
-        element_init = self.initial_cont(element_init) # C1 - - > U0 -- > C0
-        x = self.residuals_cont(initial_cont)		# R1
-        #WFMM
-        x = (1 - self.alpha)* self.convblock_cont(x)+ self.beta * initial_cont + (self.alpha - self.beta) * element_init				# F1
-        x = self.upsamples_cont(x)			# U1
+        #print(x.shape)
+        # alpha = self.alpha
+        # beta = self.beta
+        alpha, beta, gamma = F.softmax(self.hyp, dim = 0)
+        meu, neu = F.softmax(self.hyp_p, dim = 0)
+        
+        initial = self.initial(x)
+        #print(initial.shape)
+        x = self.residuals(initial)
+        #print(x.shape)
+        x = meu * self.convblock(x) + neu * initial
+        #print(x.shape)
+        x = self.upsamples(x)
+        #print("Upsample:",x.shape)
+        initial_cont = self.initial_cont(x)
+        #print(initial_cont.shape)
+        element_init = self.upsamples(initial)
+        #print(element_init.shape)
+        element_init = self.initial_cont(element_init)
+        #print(element_init.shape)
+        x = self.residuals_cont(initial_cont)
+        #print(x.shape)
+        x = alpha * self.convblock_cont(x)+ beta * initial_cont + gamma * element_init
+        x = self.upsamples_cont(x)
+        #print(x.shape)
         return torch.tanh(self.final_cont(x))
 
-'''
-Implementation of Discriminator
-(Nd Residual Blocks)
- -> Conv block [conv + PixelNorm + LReLU]
-'''
+
 class Discriminator(nn.Module):
-    def __init__(self, in_channels=3, num_channels = 64, features=[64, 64, 128, 128, 256, 256, 512, 512]):
+    def __init__(self, in_channels=3, features=[64, 64, 128, 128, 256, 256, 512, 512]):
         super().__init__()
-        self.init_conv = ConvBlock(in_channels, num_channels, stride=1, padding=1, use_bn=False, use_pn=False,discriminator=True)
-        self.layer1_1 =  ConvBlock(num_channels, num_channels, stride=2, padding=1, use_bn=False, use_pn=True,discriminator=True)
-        self.layer1_2 =  ConvBlock(num_channels, num_channels, stride=1, padding=1, use_bn=False, use_pn=True,discriminator=True)
-        self.layer2_1 =  ConvBlock(num_channels, num_channels*2, stride=1, padding=1, use_bn=False, use_pn=True,discriminator=True)
-        self.layer2_2 =  ConvBlock(num_channels*2, num_channels*2, stride=1, padding=1, use_bn=False, use_pn=True,discriminator=True)
-        self.layer3_1 =  ConvBlock(num_channels*2, num_channels*4, stride=2, padding=1, use_bn=False, use_pn=True,discriminator=True)
-        self.layer3_2 =  ConvBlock(num_channels*4, num_channels*4, stride=1, padding=1, use_bn=False, use_pn=True,discriminator=True)
-        self.layer4_1 =  ConvBlock(num_channels*4, num_channels*8, stride=2, padding=1, use_bn=False, use_pn=True,discriminator=True)
-        self.layer4_2 =  ConvBlock(num_channels*8, num_channels*8, stride=1, padding=1, use_bn=False, use_pn=True,discriminator=True)
-        
+        blocks = []
+        for idx, feature in enumerate(features):
+            blocks.append(
+                ConvBlock(
+                    in_channels,
+                    feature,
+                    kernel_size=3,
+                    stride=1 + idx % 2,
+                    padding=1,
+                    discriminator=True,
+                    use_act=True,
+                    use_bn=False if idx == 0 else True,
+                )
+            )
+            in_channels = feature
+
+        self.blocks = nn.Sequential(*blocks)
         self.classifier = nn.Sequential(
             nn.AdaptiveAvgPool2d((6, 6)),
             nn.Flatten(),
@@ -155,24 +140,23 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(1024, 1),
         )
-    
-    '''
-    Multiple Residual Blocks with Skip Connection Followed by Classifier Head (H)
-    '''
+
     def forward(self, x):
-        init = self.init_conv(x)
-        x1_1 = self.layer1_1(init)
-        x1_2 = self.layer1_2(x1_1)
-        x = x1_1 + x1_2
-        x2_1 = self.layer2_1(x)
-        x2_2 = self.layer2_2(x2_1)
-        x = x2_1 + x2_2
-        x3_1 = self.layer3_1(x)
-        x3_2 = self.layer3_2(x3_1)
-        x = x3_1 + x3_2
-        x4_1 = self.layer4_1(x)
-        x4_2 = self.layer4_2(x4_1)
-        x = x4_1 + x4_2
+        x = self.blocks(x)
+        return self.classifier(x)
 
-        return self.classifier(x)  		#Classification Head - H
+def test():
+    low_resolution = 64  # 96x96 -> 24x24
+    with torch.cuda.amp.autocast():
+        x = torch.randn((5, 3, low_resolution, low_resolution))
+        gen = Generator()
+        gen_out = gen(x)
+        disc = Discriminator()
+        disc_out = disc(gen_out)
 
+        print(gen_out.shape)
+        print(disc_out.shape)
+
+
+if __name__ == "__main__":
+    test()
