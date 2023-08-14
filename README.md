@@ -5,7 +5,7 @@
 ```
 pip install -r requirements.txt
 ```
-Download the pretrained model from [Google Drive](https://drive.google.com/file/d/1bIDRUq3K6sqM3PUA76sd9CrweAGYm3kf/view?usp=sharing) and Put it in the <b>pretrained_models</b> folder.
+Download the pretrained model from [Google Drive](https://drive.google.com/file/d/1cd0RUOTbD30dqLbngZ0h7GsvqiZK4RZQ/view?usp=drive_link) and Put it in the <b>pretrained_models</b> folder.
 
 Run this code to check the images in Demo Folder
 
