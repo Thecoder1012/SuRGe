@@ -1,4 +1,4 @@
-# SuRGe: Fortifying Generative Adversarial Networks for Image Super-Resolution</b>
+# On tailoring Generative Adversarial Network for Image Super-Resolution</b>
 
 <h3> PyTorch Implementation for <b>SuRGe: Super Resolution Generator</b> </h3>
 
