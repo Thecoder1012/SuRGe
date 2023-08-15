@@ -1,4 +1,4 @@
-# On tailoring Generative Adversarial Network for Image Super-Resolution</b>
+# Improving Image Super-Resolution with A Multiple Divergence Assisted Fully Convolutional GAN Architecture</b>
 
 <h3> PyTorch Implementation for <b>SuRGe: Super Resolution Generator</b> </h3>
 
