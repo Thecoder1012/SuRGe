@@ -95,13 +95,3 @@ class dwloss(nn.Module):
         loss = torch.sum(concat_loss * weights)
 
         return loss
-
-# def dwloss(lr, sr, hr, disc_fake):
-#     bce = nn.BCEWithLogitsLoss()
-#     gw = gw_l_n(lr, sr)
-#     js = jenson_shannon_divergence(sr, hr)
-#     adv = 1e-3 * bce(disc_fake, torch.ones_like(disc_fake))
-#     concat_loss = torch.cat([gw.unsqueeze(0), js.unsqueeze(0), adv.unsqueeze(0)], 0)
-#     weights = F.softmax(concat_loss / self.softmax_temp, dim = 0)
-#     loss = torch.sum(concat_loss * weights)
-#     return loss
