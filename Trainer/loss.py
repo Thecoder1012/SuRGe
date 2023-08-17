@@ -19,29 +19,6 @@ warnings.filterwarnings("ignore")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
-# phi_5,4 5th conv layer before maxpooling but after activation
-def gw_l_old(image1_batch, image2_batch):
-    image1_batch = image1_batch.detach().cpu().numpy()
-    image2_batch = image2_batch.detach().cpu().numpy()
-    #making batch of 2d size
-    batch_size = image2_batch.shape[0]
-    image1_batch_2d = image1_batch.reshape(batch_size, -1)
-    image2_batch_2d = image2_batch.reshape(batch_size, -1)
-
-    # print(image1_batch.shape, image2_batch.shape)
-    c1 = sp.spatial.distance.cdist(image1_batch_2d, image1_batch_2d)
-    c2 = sp.spatial.distance.cdist(image2_batch_2d, image2_batch_2d)
-    c1 /= c1.max()
-    c2 /= c2.max()
-    p = ot.unif(batch_size)
-    q = ot.unif(batch_size)
-    print(type(c1), type(c2))
-    gw0, log0 = ot.gromov.gromov_wasserstein(c1, c2, p, q, 'square_loss', epsilon = 5e-4, log = True)
-    # gw, log = ot.gromov.entropic_gromov_wasserstein(c1, c2, p, q, 'square_loss', epsilon = 5e-4, log=True)
-    # print(log0)
-    return log0['gw_dist']
-
 def gw_l_old_grad(image1_batch, image2_batch):
     batch_size = image2_batch.shape[0]
     # c1 /= c1.max()
@@ -74,45 +51,6 @@ def gw_l_old_grad(image1_batch, image2_batch):
     return torch.tensor(log0['gw_dist'], requires_grad = True)
     # print(gw_loss)
     # return gw_loss
-
-def gw_l_n(image1_batch, image2_batch):
-    # image1_batch = image1_batch.detach().cpu().numpy()
-    # image2_batch = image2_batch.detach().cpu().numpy()
-    #making batch of 2d size
-    batch_size = image2_batch.shape[0]
-    # image1_batch_2d = image1_batch.reshape(batch_size, -1)
-    # image2_batch_2d = image2_batch.reshape(batch_size, -1)
-
-    # print(image1_batch.shape, image2_batch.shape)
-    # c1 = sp.spatial.distance.cdist(image1_batch_2d, image1_batch_2d)
-    # c2 = sp.spatial.distance.cdist(image2_batch_2d, image2_batch_2d)
-
-    # c1 /= c1.max()
-    # c2 /= c2.max()
-    image1_batch_f = torch.flatten(image1_batch, start_dim = 1)
-    image2_batch_f = torch.flatten(image2_batch, start_dim = 1)
-
-    #torch impl
-    c1_torch = torch.cdist(image1_batch_f, image1_batch_f)
-    c2_torch = torch.cdist(image2_batch_f, image2_batch_f)
-
-    p = ot.unif(batch_size)
-    q = ot.unif(batch_size)
-
-    #torch impl
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
-    p_torch = torch.tensor(p).requires_grad_(True).to(device)
-    q_torch = torch.tensor(q).to(device)
-
-    # gw0, log0 = ot.gromov.gromov_wasserstein(c1_torch, c2_torch, p, q, 'square_loss', epsilon = 5e-4, log = True)
-    gw_loss = gromov_wasserstein2(c1_torch, c2_torch, p_torch, q_torch)
-    # gw, log = ot.gromov.entropic_gromov_wasserstein(c1, c2, p, q, 'square_loss', epsilon = 5e-4, log=True)
-    # print(log0)
-    # return log0['gw_dist']
-    # print(gw_loss)
-    return gw_loss
-
 
 def jenson_shannon_divergence(net_1_logits, net_2_logits):
     # fake_dist = img_to_dist(net_1_logits)
