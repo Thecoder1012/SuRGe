@@ -1,4 +1,4 @@
-# Improving Image Super-Resolution with A Multiple Divergence Assisted Fully Convolutional GAN Architecture</b>
+# Near-Perfect Image Super-Resolution: Exploring Multiple Divergence Measures in Fully Convolutional GAN</b>
 
 <h3> PyTorch Implementation for <b>SuRGe: Super Resolution Generator</b> </h3>
 
